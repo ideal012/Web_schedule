@@ -334,7 +334,7 @@ def run_scheduler():
     solver.parameters.num_search_workers = 8
     progress_bar.progress(50)
     status = solver.Solve(model)
-    progress_bar.progress(100)
+
 
     # Output Handling
     if status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
@@ -354,7 +354,7 @@ def run_scheduler():
             # 1. สร้างรายการห้องทั้งหมดเพื่อให้ User เลือก
             all_rooms = sorted(df_res['Room'].unique())
             selected_room = st.selectbox("🔍 Select Room (เลือกห้องเรียน):", all_rooms)
-
+    progress_bar.progress(75)
             # 2. ฟังก์ชันสร้างตารางเรียนแบบ Grid (เลียนแบบภาพที่คุณส่งมา)
             def create_timetable_grid(df, room_name):
                 # กำหนดช่วงเวลา (Header คอลัมน์)
@@ -388,6 +388,7 @@ def run_scheduler():
                             else:
                                 df_grid.at[row['Day'], col_name] = course_info
                 return df_grid
+    progress_bar.progress(100)
             # 3. แสดงผลตาราง
             if selected_room:
                 st.subheader(f"📍 Timetable for: {selected_room}")
