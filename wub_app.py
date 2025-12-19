@@ -331,6 +331,7 @@ def run_scheduler():
     
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 120
+    solver.parameters.num_search_workers = 2
     progress_bar.progress(50)
     status = solver.Solve(model)
     progress_bar.progress(100)
