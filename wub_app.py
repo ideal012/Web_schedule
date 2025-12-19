@@ -341,10 +341,8 @@ def run_scheduler():
         st.success(f"✅ Schedule successful! (Status: {solver.StatusName(status)})")
         results = []
         unscheduled = []
-        
-            if results:
+        if results:
             df_res = pd.DataFrame(results)
-            
             # แปลงข้อมูลวันให้เรียงตามลำดับ Mon -> Fri
             day_order = {'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4}
             df_res['DayIdx'] = df_res['Day'].map(day_order)
@@ -389,9 +387,7 @@ def run_scheduler():
                                 df_grid.at[row['Day'], col_name] += ' / ' + course_info
                             else:
                                 df_grid.at[row['Day'], col_name] = course_info
-                
                 return df_grid
-
             # 3. แสดงผลตาราง
             if selected_room:
                 st.subheader(f"📍 Timetable for: {selected_room}")
