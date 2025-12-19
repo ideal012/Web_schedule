@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 from ortools.sat.python import cp_model
@@ -101,7 +100,7 @@ def run_scheduler():
     try:
         df_room = pd.read_csv('room.csv')
         df_teacher_courses = pd.read_csv('teacher_courses.csv')
-        df_ai_in = pd.read_csv('ai_courses.csv')
+        df_ai_in = pd.read_csv('ai_in_courses.csv')
         df_cy_in = pd.read_csv('cy_in_courses.csv')
         all_teacher = pd.read_csv('all_teachers.csv')
         
