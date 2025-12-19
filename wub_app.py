@@ -342,37 +342,75 @@ def run_scheduler():
         results = []
         unscheduled = []
         
-        for t in tasks:
-            uid = t['uid']
-            if uid in is_scheduled and solver.Value(is_scheduled[uid]):
-                d = solver.Value(task_vars[uid]['day'])
-                s = solver.Value(task_vars[uid]['start'])
-                dur = t['dur']
-                r_name = "Unknown"
-                for (tid, r, d_idx, s_idx), var in schedule.items():
-                    if tid == uid and d_idx == d and s_idx == s and solver.Value(var):
-                        r_name = r; break
-                
-                results.append({
-                    'Day': DAYS[d], 'Start': SLOT_MAP[s]['time'], 'End': SLOT_MAP.get(s + dur, {'time': '19:00'})['time'],
-                    'Room': r_name, 'Course': t['id'], 'Sec': t['sec'], 'Type': t['type'],
-                    'Teacher': ",".join(t['teachers'])
-                })
-            else:
-                unscheduled.append({'Course': t['id'], 'Sec': t['sec'], 'Reason': 'Constraints'})
-
-        if results:
+if results:
             df_res = pd.DataFrame(results)
-            # Sorting
-            df_res['DayIdx'] = df_res['Day'].apply(lambda x: DAYS.index(x))
-            df_res = df_res.sort_values(by=['DayIdx', 'Start', 'Room']).drop(columns=['DayIdx'])
             
-            st.subheader("📅 Scheduled Timetable")
-            st.dataframe(df_res)
-            
-            # CSV Download
+            # แปลงข้อมูลวันให้เรียงตามลำดับ Mon -> Fri
+            day_order = {'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4}
+            df_res['DayIdx'] = df_res['Day'].map(day_order)
+            df_res = df_res.sort_values(by=['DayIdx', 'Start'])
+
+            st.divider()
+            st.header("🏫 Room Schedules (ตารางเรียนรายห้อง)")
+
+            # 1. สร้างรายการห้องทั้งหมดเพื่อให้ User เลือก
+            all_rooms = sorted(df_res['Room'].unique())
+            selected_room = st.selectbox("🔍 Select Room (เลือกห้องเรียน):", all_rooms)
+
+            # 2. ฟังก์ชันสร้างตารางเรียนแบบ Grid (เลียนแบบภาพที่คุณส่งมา)
+            def create_timetable_grid(df, room_name):
+                # กำหนดช่วงเวลา (Header คอลัมน์)
+                hours = range(8, 20) # 08:00 - 19:00
+                time_cols = [f"{h:02d}:00-{h+1:02d}:00" for h in hours if h < 19]
+                
+                # กำหนดแถว (วัน)
+                days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+                
+                # สร้าง DataFrame ว่างๆ
+                grid_data = {t: [''] * 5 for t in time_cols}
+                df_grid = pd.DataFrame(grid_data, index=days)
+
+                # ดึงข้อมูลเฉพาะห้องที่เลือก
+                room_df = df[df['Room'] == room_name]
+
+                for _, row in room_df.iterrows():
+                    course_info = f"{row['Course']} ({row['Type']})\nSec {row['Sec']}"
+                    
+                    # แปลงเวลาเริ่ม-จบ เป็นตัวเลขเพื่อหาว่าลงช่องไหนบ้าง
+                    start_h = int(row['Start'].split(':')[0])
+                    end_h = int(row['End'].split(':')[0])
+                    
+                    # วนลูปเติมข้อมูลลงในช่องเวลาที่วิชานั้นครอบคลุม
+                    for h in range(start_h, end_h):
+                        col_name = f"{h:02d}:00-{h+1:02d}:00"
+                        if col_name in df_grid.columns:
+                            # ถ้ามีข้อมูลอยู่แล้ว ให้คั่นด้วย /
+                            if df_grid.at[row['Day'], col_name] != '':
+                                df_grid.at[row['Day'], col_name] += ' / ' + course_info
+                            else:
+                                df_grid.at[row['Day'], col_name] = course_info
+                
+                return df_grid
+
+            # 3. แสดงผลตาราง
+            if selected_room:
+                st.subheader(f"📍 Timetable for: {selected_room}")
+                
+                # สร้างตาราง Grid
+                grid_df = create_timetable_grid(df_res, selected_room)
+                
+                # แสดงผลด้วย st.dataframe (ปรับความสูงให้อ่านง่าย)
+                st.dataframe(grid_df, use_container_width=True, height=250)
+
+                # แสดงข้อมูลแบบ List รายละเอียดด้านล่าง (เผื่อดูรายละเอียดอาจารย์)
+                st.caption("📄 Detailed List")
+                room_details = df_res[df_res['Room'] == selected_room][['Day', 'Start', 'End', 'Course', 'Sec', 'Type', 'Teacher']]
+                st.dataframe(room_details, use_container_width=True, hide_index=True)
+
+            # ปุ่ม Download CSV รวม
+            st.divider()
             csv = df_res.to_csv(index=False).encode('utf-8')
-            st.download_button("📥 Download Schedule CSV", data=csv, file_name=f"schedule_mode_{SCHEDULE_MODE}.csv", mime="text/csv")
+            st.download_button("📥 Download Full Schedule CSV", data=csv, file_name=f"full_schedule_mode_{SCHEDULE_MODE}.csv", mime="text/csv")
 
         if unscheduled:
             st.warning("⚠️ Some tasks could not be scheduled")
