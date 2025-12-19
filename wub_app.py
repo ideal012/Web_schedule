@@ -342,7 +342,7 @@ def run_scheduler():
         results = []
         unscheduled = []
         
-if results:
+            if results:
             df_res = pd.DataFrame(results)
             
             # แปลงข้อมูลวันให้เรียงตามลำดับ Mon -> Fri
@@ -411,11 +411,9 @@ if results:
             st.divider()
             csv = df_res.to_csv(index=False).encode('utf-8')
             st.download_button("📥 Download Full Schedule CSV", data=csv, file_name=f"full_schedule_mode_{SCHEDULE_MODE}.csv", mime="text/csv")
-
         if unscheduled:
             st.warning("⚠️ Some tasks could not be scheduled")
-            st.dataframe(pd.DataFrame(unscheduled))
-            
+            st.dataframe(pd.DataFrame(unscheduled))        
     else:
         st.error(f"❌ Cannot schedule in Mode {SCHEDULE_MODE} (Constraints too strict).")
 
