@@ -338,6 +338,7 @@ def run_scheduler():
 
     # Output Handling
     if status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
+        progress_bar.progress(100)
         st.success(f"✅ Schedule successful! (Status: {solver.StatusName(status)})")
         results = []
         unscheduled = []
@@ -388,7 +389,6 @@ def run_scheduler():
                             else:
                                 df_grid.at[row['Day'], col_name] = course_info
                 return df_grid
-    progress_bar.progress(100)
             # 3. แสดงผลตาราง
             if selected_room:
                 st.subheader(f"📍 Timetable for: {selected_room}")
